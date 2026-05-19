@@ -32,9 +32,5 @@ The state at repository extraction. Pure JS, zero dependencies, no build.
   (fixed buckets — 35 days reads "1 mo", not git-relative's "5 wks").
 - Setting `lineHistory.maxRevisions` (default 10).
 
-### History before extraction
-
-0.0.1–0.0.17 iterated on the surface (editor hover → quick-pick → Explorer
-TreeView → webview → back to TreeView) chasing a Timeline-identical look;
-0.1.0 settled the architecture. Full design rationale lives in
-`~/vonk/research/vscode-branch-diff-extension.md`.
+This is the first tagged version; earlier iteration happened in a private
+monorepo and is not part of this repository's history.
