@@ -6,6 +6,10 @@
   "publisher": "thimo",
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thimo/vscode-line-history.git"
+  },
   "keywords": ["git", "history", "blame", "log", "line history"],
   "engines": {
     "vscode": "^1.80.0"
@@ -15,7 +19,7 @@
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
   "scripts": {
-    "package": "vsce package --allow-missing-repository --no-dependencies"
+    "package": "vsce package --no-dependencies"
   },
   "contributes": {
     "commands": [
