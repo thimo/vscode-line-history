@@ -1,0 +1,86 @@
+{
+  "name": "line-history",
+  "displayName": "Line History",
+  "description": "The VS Code Timeline experience, but for a single source line instead of the whole file: per-line git history in an Explorer view with the native commit hover.",
+  "version": "0.1.3",
+  "publisher": "thimo",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["git", "history", "blame", "log", "line history"],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["SCM Providers"],
+  "extensionDependencies": ["vscode.git"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "scripts": {
+    "package": "vsce package --allow-missing-repository --no-dependencies"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "lineHistory.show",
+        "title": "Line History: Show for Current Line",
+        "category": "Line History"
+      },
+      {
+        "command": "lineHistory.openCommit",
+        "title": "Open Commit",
+        "category": "Line History",
+        "icon": "$(diff-multiple)"
+      },
+      {
+        "command": "lineHistory.openLineHistory",
+        "title": "Open Full Line History",
+        "category": "Line History",
+        "icon": "$(diff-multiple)"
+      },
+      {
+        "command": "lineHistory.refresh",
+        "title": "Refresh",
+        "category": "Line History",
+        "icon": "$(refresh)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "lineHistory.view",
+          "name": "Line History"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "lineHistory.openLineHistory",
+          "when": "view == lineHistory.view",
+          "group": "navigation@1"
+        },
+        {
+          "command": "lineHistory.refresh",
+          "when": "view == lineHistory.view",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "lineHistory.openCommit",
+          "when": "view == lineHistory.view && viewItem == commit",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Line History",
+      "properties": {
+        "lineHistory.maxRevisions": {
+          "type": "number",
+          "default": 10,
+          "description": "Maximum number of revisions to list for a line."
+        }
+      }
+    }
+  }
+}
