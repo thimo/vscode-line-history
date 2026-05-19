@@ -5,6 +5,18 @@ const { execFile } = require("node:child_process");
 const path = require("node:path");
 const os = require("node:os");
 const fs = require("node:fs");
+const crypto = require("node:crypto");
+
+// git's hover shows a gravatar derived from the commit email (md5 of the
+// lowercased, trimmed address). `d=retro` so addresses without a real
+// gravatar still get a generated image, like Timeline.
+function gravatarUrl(email) {
+  const h = crypto
+    .createHash("md5")
+    .update(String(email).trim().toLowerCase())
+    .digest("hex");
+  return `https://www.gravatar.com/avatar/${h}?s=40&d=retro`;
+}
 
 /**
  * Line History — per-line git history.
@@ -455,9 +467,11 @@ function absDate(ts) {
 
 /**
  * Build the commit hover as a MarkdownString — rendered by VS Code's own
- * hover widget (the same one Timeline uses). Mirrors git's getCommitHover:
- * account · author (mailto), history · relative (absolute); message; rule;
- * shortstat with the git-decoration colours.
+ * hover widget (the same one Timeline uses). Mirrors git's getCommitHover
+ * field-for-field: gravatar + author (mailto), comma, $(history) relative
+ * (absolute); co-authors as `$(account) **Name** _(Co-author)_`; message
+ * (co-author trailers stripped); rule; shortstat in scmGraph hover colours;
+ * rule; a `$(git-commit) <sha>` (copy) | Open Commit command row.
  */
 function buildTooltip(node, meta) {
   const md = new vscode.MarkdownString(undefined, true); // supportThemeIcons
@@ -470,16 +484,35 @@ function buildTooltip(node, meta) {
   const name = r.email
     ? `[**${r.author}**](mailto:${r.email})`
     : `**${r.author}**`;
+  const avatar = r.email
+    ? `![${r.author}](${gravatarUrl(r.email)}|width=20,height=20)`
+    : "$(account)";
   md.appendMarkdown(
-    `$(account) ${name}, $(history) ${fromNow(r.ts)} (${absDate(r.ts)})`
+    `${avatar} ${name}, $(history) ${fromNow(r.ts)} (${absDate(r.ts)})`
   );
 
-  // Message — emoji left as-is; escape image syntax; collapse runs of
-  // newlines to paragraph breaks; then a rule.
-  const message = (meta && meta.message) || r.subject || "(no subject)";
+  // Co-authors — git pulls `Co-authored-by:` trailers out of the message
+  // and renders them as `$(account) **Name** _(Co-author)_`, not as raw
+  // body text. Mirror that, and strip them from the message below.
+  let message = (meta && meta.message) || r.subject || "(no subject)";
+  const coRe = /^[ \t]*Co-authored-by:[ \t]*(.+?)[ \t]*<([^>]+)>[ \t]*$/gim;
+  const coauthors = [];
+  let cm;
+  while ((cm = coRe.exec(message)) !== null) {
+    coauthors.push({ name: cm[1], email: cm[2] });
+  }
+  for (const co of coauthors) {
+    md.appendMarkdown(
+      `  \n$(account) [**${co.name}**](mailto:${co.email}) _(Co-author)_`
+    );
+  }
+
+  // Message — drop co-author trailers, escape image syntax, collapse runs
+  // of newlines to paragraph breaks; then a rule.
+  message = message.replace(coRe, "");
   const safe = message
     .replace(/!\[/g, "&#33;&#91;")
-    .replace(/\n+/g, "\n\n")
+    .replace(/\n{2,}/g, "\n\n")
     .trim();
   md.appendMarkdown(`\n\n${safe}\n\n---\n\n`);
 
@@ -507,12 +540,17 @@ function buildTooltip(node, meta) {
     if (parts.length) md.appendMarkdown(`${parts.join(", ")}\n\n---\n\n`);
   }
 
-  // Command links — git's appendCommands pattern.
-  const args = encodeURIComponent(
+  // Command links — git's appendCommands pattern: groups joined by
+  // `&nbsp;&nbsp;|&nbsp;&nbsp;`. $(git-commit) <short> copies the SHA;
+  // then Open Commit (we have no remote, so no "Open on GitHub").
+  const openArgs = encodeURIComponent(
     JSON.stringify([{ file: node.file, hash: r.hash }])
   );
+  const copyArgs = encodeURIComponent(JSON.stringify([r.hash]));
   md.appendMarkdown(
-    `[Open Commit](command:lineHistory.openCommit?${args} ` +
+    `$(git-commit) [${r.short}](command:lineHistory.copyCommit?${copyArgs} ` +
+      `"Copy Commit SHA")&nbsp;&nbsp;|&nbsp;&nbsp;` +
+      `[Open Commit](command:lineHistory.openCommit?${openArgs} ` +
       `"Open the full commit as a multi-file diff")`
   );
   return md;
@@ -769,7 +807,16 @@ function activate(context) {
       "lineHistory.openLineHistory",
       openLineHistory
     ),
-    vscode.commands.registerCommand("lineHistory.refresh", followCursor)
+    vscode.commands.registerCommand("lineHistory.refresh", followCursor),
+    vscode.commands.registerCommand("lineHistory.copyCommit", (hash) => {
+      if (hash) {
+        vscode.env.clipboard.writeText(String(hash));
+        vscode.window.setStatusBarMessage(
+          `Copied ${String(hash).slice(0, 8)}`,
+          2000
+        );
+      }
+    })
   );
 
   followCursor();

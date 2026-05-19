@@ -10,10 +10,11 @@ possible, just per-line.
 
 - **Explorer view "Line History"** follows the cursor and lists every commit
   that touched the current line (`git log -L`). Newest first.
-- **Commit hover** is the *real* VS Code hover widget (the same one Timeline
-  uses), filled lazily — author (mailto), relative + absolute date, full
-  message, shortstat. Not a re-implementation; it's `TreeItem.tooltip`
-  resolved via `resolveTreeItem`.
+- **Commit hover** is the *real* VS Code hover widget — the same one
+  Timeline uses (`TreeItem.tooltip`, resolved lazily via `resolveTreeItem`),
+  with the same content as git's commit hover: gravatar + author (mailto),
+  co-authors, relative + absolute date, message, shortstat, and a
+  `$(git-commit) <sha>` (copy) · Open Commit command row.
 - **Click a row** → that revision's diff, scrolled to the line.
 - **Inline "Open Commit"** (hover a row) → the whole commit as a native
   multi-file diff.
