@@ -14,7 +14,8 @@ possible, just per-line.
   Timeline uses (`TreeItem.tooltip`, resolved lazily via `resolveTreeItem`),
   with the same content as git's commit hover: gravatar + author (mailto),
   co-authors, relative + absolute date, message, shortstat, and a
-  `$(git-commit) <sha>` (copy) · Open Commit command row.
+  `$(git-commit) <sha>` (copy) · Open Commit · Open on GitHub command row
+  (the GitHub link only when the repo has a github.com remote).
 - **Click a row** → that revision's diff, scrolled to the line.
 - **Inline "Open Commit"** (hover a row) → the whole commit as a native
   multi-file diff.

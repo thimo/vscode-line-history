@@ -377,6 +377,30 @@ function commitMeta(root, hash) {
   }));
 }
 
+// Resolve origin to a GitHub https base (or undefined). Cached per repo —
+// the remote doesn't change between hovers.
+const _ghBaseCache = new Map();
+function ghRemoteBase(root) {
+  if (_ghBaseCache.has(root)) return Promise.resolve(_ghBaseCache.get(root));
+  return new Promise((resolve) => {
+    execFile(
+      "git",
+      ["config", "--get", "remote.origin.url"],
+      { cwd: root, timeout: 4000 },
+      (err, stdout) => {
+        let base;
+        const url = String(stdout || "").trim();
+        const m = url.match(
+          /github\.com[/:]([^/]+)\/(.+?)(?:\.git)?\/?$/i
+        );
+        if (m) base = `https://github.com/${m[1]}/${m[2]}`;
+        _ghBaseCache.set(root, base);
+        resolve(base);
+      }
+    );
+  });
+}
+
 async function openRevision(arg) {
   if (!arg || !arg.file || !arg.hash) return;
   const uri = vscode.Uri.file(arg.file);
@@ -473,7 +497,7 @@ function absDate(ts) {
  * (co-author trailers stripped); rule; shortstat in scmGraph hover colours;
  * rule; a `$(git-commit) <sha>` (copy) | Open Commit command row.
  */
-function buildTooltip(node, meta) {
+function buildTooltip(node, meta, ghBase) {
   const md = new vscode.MarkdownString(undefined, true); // supportThemeIcons
   md.isTrusted = true;
   md.supportHtml = true;
@@ -547,12 +571,20 @@ function buildTooltip(node, meta) {
     JSON.stringify([{ file: node.file, hash: r.hash }])
   );
   const copyArgs = encodeURIComponent(JSON.stringify([r.hash]));
-  md.appendMarkdown(
+  const sep = "&nbsp;&nbsp;|&nbsp;&nbsp;";
+  const groups = [
     `$(git-commit) [${r.short}](command:lineHistory.copyCommit?${copyArgs} ` +
-      `"Copy Commit SHA")&nbsp;&nbsp;|&nbsp;&nbsp;` +
-      `[Open Commit](command:lineHistory.openCommit?${openArgs} ` +
-      `"Open the full commit as a multi-file diff")`
-  );
+      `"Copy Commit SHA")`,
+    `[Open Commit](command:lineHistory.openCommit?${openArgs} ` +
+      `"Open the full commit as a multi-file diff")`,
+  ];
+  if (ghBase) {
+    groups.push(
+      `$(github) [Open on GitHub](${ghBase}/commit/${r.hash} ` +
+        `"Open this commit on GitHub")`
+    );
+  }
+  md.appendMarkdown(groups.join(sep));
   return md;
 }
 
@@ -644,14 +676,16 @@ class LineHistoryProvider {
     if (!node || node.placeholder) return item;
     const r = node.rev;
     let meta = this.metaCache.get(r.hash);
-    if (!meta) {
-      const ctx = repoFor(vscode.Uri.file(node.file));
-      if (ctx) {
+    let ghBase;
+    const ctx = repoFor(vscode.Uri.file(node.file));
+    if (ctx) {
+      if (!meta) {
         meta = await commitMeta(ctx.root, r.hash);
         this.metaCache.set(r.hash, meta);
       }
+      ghBase = await ghRemoteBase(ctx.root);
     }
-    item.tooltip = buildTooltip(node, meta);
+    item.tooltip = buildTooltip(node, meta, ghBase);
     return item;
   }
 
