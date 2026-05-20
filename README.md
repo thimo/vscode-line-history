@@ -1,5 +1,7 @@
 # Line History
 
+[![Release](https://img.shields.io/github/v/release/thimo/vscode-line-history?label=release)](https://github.com/thimo/vscode-line-history/releases) [![VS Code Marketplace](https://img.shields.io/badge/marketplace-install-blue)](https://marketplace.visualstudio.com/items?itemName=thimo.line-history)
+
 The VS Code **Timeline** experience, but for a **single source line** instead
 of the whole file. Same Explorer view, same native commit hover, same
 multi-diff — scoped to the line under your cursor and its `git log -L`
