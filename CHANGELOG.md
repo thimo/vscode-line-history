@@ -2,11 +2,20 @@
 
 All notable changes to the Line History extension.
 
-## [Unreleased]
+## Unreleased
 
-Split out into its own repository. No functional change vs the installed
-0.1.3 build; project scaffolding added (LICENSE, README, this changelog,
-F5 launch config). Version stays `0.1.3` until the first published release.
+First Marketplace release.
+
+- Extension icon: stacked-revisions glyph (same line at multiple commits,
+  gutter with commit dots) over a magenta→violet gradient. Source SVG in
+  `media/icon.svg`; PNG in `media/icon.png` is what the manifest points at.
+- Marketplace metadata: `homepage`, `bugs`, `author` filled in; `private`
+  flag dropped so `vsce` accepts the package.
+- Release tooling: `scripts/release.sh` automates bump → tag → `.vsix` →
+  smoke-test pause → marketplace publish → push → GitHub release with the
+  `.vsix` attached. See `RELEASING.md`.
+
+No functional change to the extension itself vs 0.1.3.
 
 ## [0.1.3] — 2026-05-19
 
