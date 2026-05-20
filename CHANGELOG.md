@@ -2,7 +2,7 @@
 
 All notable changes to the Line History extension.
 
-## Unreleased
+## [0.1.4] — 2026-05-20
 
 First Marketplace release.
 

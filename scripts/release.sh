@@ -95,30 +95,46 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 current_version=$(node -p "require('./package.json').version")
+
+# Resume detection: if a previous run got past bump+commit+tag+package but
+# bailed before marketplace publish (e.g. vsce rejected the manifest, gh was
+# down), re-running with the same version should pick up where it stopped
+# rather than re-bumping. Local artifacts (commit, tag, .vsix) are the
+# evidence; the tag absence on origin proves nothing got pushed yet.
+RESUMING=false
 if [[ "$current_version" == "$VERSION" ]]; then
-	echo "package.json is already at $VERSION — bump aborted" >&2
-	exit 1
-fi
+	if git rev-parse "v$VERSION" >/dev/null 2>&1 && [[ -f "$VSIX" ]]; then
+		if git ls-remote --tags origin "v$VERSION" 2>/dev/null | grep -q "refs/tags/v$VERSION$"; then
+			echo "Tag v$VERSION already on origin — release already published. Nothing to do." >&2
+			exit 1
+		fi
+		RESUMING=true
+		echo "==> Resuming in-progress release of $VERSION (commit, tag, $VSIX all in place)"
+	else
+		echo "package.json is already at $VERSION but tag or $VSIX missing — partial state, fix manually" >&2
+		exit 1
+	fi
+else
+	if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+		echo "Tag v$VERSION already exists locally but package.json is at $current_version — inconsistent" >&2
+		exit 1
+	fi
 
-if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-	echo "Tag v$VERSION already exists locally" >&2
-	exit 1
-fi
+	if git ls-remote --tags origin "v$VERSION" 2>/dev/null | grep -q "refs/tags/v$VERSION$"; then
+		echo "Tag v$VERSION already exists on origin" >&2
+		exit 1
+	fi
 
-if git ls-remote --tags origin "v$VERSION" 2>/dev/null | grep -q "refs/tags/v$VERSION$"; then
-	echo "Tag v$VERSION already exists on origin" >&2
-	exit 1
-fi
+	if ! grep -q "^## Unreleased" CHANGELOG.md; then
+		echo "CHANGELOG.md must have a '## Unreleased' section. Write release notes there first." >&2
+		exit 1
+	fi
 
-if ! grep -q "^## Unreleased" CHANGELOG.md; then
-	echo "CHANGELOG.md must have a '## Unreleased' section. Write release notes there first." >&2
-	exit 1
-fi
-
-unreleased_body=$(awk '/^## Unreleased/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md | sed '/^[[:space:]]*$/d')
-if [[ -z "$unreleased_body" ]]; then
-	echo "CHANGELOG.md '## Unreleased' section is empty — write entries first." >&2
-	exit 1
+	unreleased_body=$(awk '/^## Unreleased/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md | sed '/^[[:space:]]*$/d')
+	if [[ -z "$unreleased_body" ]]; then
+		echo "CHANGELOG.md '## Unreleased' section is empty — write entries first." >&2
+		exit 1
+	fi
 fi
 
 if ! command -v gh >/dev/null 2>&1; then
@@ -135,17 +151,46 @@ if ! command -v npx >/dev/null 2>&1; then
 	exit 1
 fi
 
+# Parse sanity. Pure JS, no build, so `node --check` is the whole "compile" step.
+run node --check extension.js
+
+# Icon PNG must reflect the current SVG. Compare a fresh render against the
+# committed PNG byte-for-byte so a stale icon can't sneak into a release.
+if command -v rsvg-convert >/dev/null 2>&1; then
+	tmp_png=$(mktemp -t line-history-icon.XXXXXX).png
+	trap 'rm -f "$tmp_png"' EXIT
+	run rsvg-convert -w 1024 -h 1024 media/icon.svg -o "$tmp_png"
+	if ! $DRY_RUN; then
+		if ! cmp -s "$tmp_png" media/icon.png; then
+			echo "media/icon.png is out of sync with media/icon.svg." >&2
+			echo "Regenerate with: rsvg-convert -w 1024 -h 1024 media/icon.svg -o media/icon.png" >&2
+			exit 1
+		fi
+	fi
+else
+	echo "(skipping icon-sync check: rsvg-convert not installed)"
+fi
+
 run git pull --ff-only
 
-# === 2. Bump ===
-echo "==> Bumping to $VERSION ($(date +%Y-%m-%d))"
+if ! $RESUMING; then
+	# === 2. Bump ===
+	echo "==> Bumping to $VERSION ($(date +%Y-%m-%d))"
 
-today=$(date +%Y-%m-%d)
+	today=$(date +%Y-%m-%d)
 
-if ! $DRY_RUN; then
-	node -e "const fs=require('fs'); const p=require('./package.json'); p.version=process.argv[1]; fs.writeFileSync('./package.json', JSON.stringify(p, null, 2)+'\n');" "$VERSION"
+	if ! $DRY_RUN; then
+		# Regex-replace only the "version" value so package.json formatting
+		# (indentation, key order, trailing newline) stays byte-for-byte.
+		node -e "
+			const fs = require('fs');
+			const path = './package.json';
+			const raw = fs.readFileSync(path, 'utf8');
+			const updated = raw.replace(/\"version\":\s*\"[^\"]+\"/, '\"version\": \"' + process.argv[1] + '\"');
+			fs.writeFileSync(path, updated);
+		" "$VERSION"
 
-	python3 - "$VERSION" "$today" <<'PY'
+		python3 - "$VERSION" "$today" <<'PY'
 import re, sys
 version, today = sys.argv[1], sys.argv[2]
 path = 'CHANGELOG.md'
@@ -158,20 +203,21 @@ if n == 0:
 with open(path, 'w') as f:
     f.write(text)
 PY
-fi
+	fi
 
-# === 3. Commit, tag, package ===
-echo "==> Commit + tag + package"
+	# === 3. Commit, tag, package ===
+	echo "==> Commit + tag + package"
 
-run git add package.json CHANGELOG.md
-run git commit -m "Release $VERSION"
-run git tag "v$VERSION"
+	run git add package.json CHANGELOG.md
+	run git commit -m "Release $VERSION"
+	run git tag "v$VERSION"
 
-run npx vsce package --no-dependencies --out "$VSIX"
+	run npx vsce package --no-dependencies --out "$VSIX"
 
-if [[ ! -f "$VSIX" && "$DRY_RUN" == "false" ]]; then
-	echo "Expected $VSIX to be produced by vsce package" >&2
-	exit 1
+	if [[ ! -f "$VSIX" && "$DRY_RUN" == "false" ]]; then
+		echo "Expected $VSIX to be produced by vsce package" >&2
+		exit 1
+	fi
 fi
 
 # === 4. Smoke test pause ===
@@ -218,7 +264,7 @@ run git push origin "v$VERSION"
 echo "==> Creating GitHub release"
 
 notes=$(mktemp)
-trap 'rm -f "$notes"' EXIT
+trap 'rm -f "$notes" "${tmp_png:-}"' EXIT
 
 if ! $DRY_RUN; then
 	python3 - "$VERSION" "$notes" <<'PY'
