@@ -2,7 +2,7 @@
   "name": "line-history",
   "displayName": "Line History (Timeline per line)",
   "description": "The VS Code Timeline experience, but for a single source line instead of the whole file: per-line git history in an Explorer view with the native commit hover.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "thimo",
   "license": "MIT",
   "author": {

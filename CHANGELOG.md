@@ -2,7 +2,7 @@
 
 All notable changes to the Line History extension.
 
-## Unreleased
+## [0.1.5] — 2026-05-20
 
 - Icon: crop SVG viewBox tight to the tile so the artwork fills the
   marketplace canvas instead of being inset with a 10% transparent margin.
