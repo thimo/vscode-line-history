@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E00090"/><stop offset="0.55" stop-color="#8900D2"/><stop offset="1" stop-color="#4F00FF"/></linearGradient>
+    <radialGradient id="hotspot" cx="0.25" cy="0.18" r="0.7"><stop offset="0" stop-color="#FF1ABA" stop-opacity="0.75"/><stop offset="1" stop-color="#FF1ABA" stop-opacity="0"/></radialGradient>
+    <linearGradient id="topShine" x1="0.5" y1="0" x2="0.5" y2="0.45"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.2"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+    <filter id="glyphShadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="16"/><feOffset dx="0" dy="12"/><feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="232" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="232" fill="url(#hotspot)" style="mix-blend-mode:screen"/>
+  <rect x="100" y="100" width="824" height="824" rx="232" fill="url(#topShine)"/>
+
+  <g filter="url(#glyphShadow)">
+    <rect x="195" y="265" width="634" height="494" rx="56" fill="white"/>
+    <path d="M195 321 v-0 a56 56 0 0 1 56 -56 h522 a56 56 0 0 1 56 56 v66 h-634 z" fill="#F0E0F7"/>
+
+    <g transform="translate(252 326)" stroke="#8900D2" stroke-width="6" fill="none" stroke-linecap="round">
+      <line x1="0" y1="-18" x2="0" y2="18"/>
+      <line x1="0" y1="-6" x2="18" y2="-6"/>
+      <circle cx="0" cy="-18" r="6" fill="#8900D2"/>
+      <circle cx="0" cy="18"  r="6" fill="#8900D2"/>
+      <circle cx="24" cy="-6" r="6" fill="#8900D2"/>
+    </g>
+
+    <!-- thick line, 22px -->
+    <rect x="328" y="315" width="190" height="22" rx="11" fill="#FFFFFF"/>
+
+    <line x1="282" y1="455" x2="282" y2="685" stroke="#C9B5D9" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="282" cy="455" r="18" fill="#E00090"/>
+    <rect x="328" y="437" width="380" height="36" rx="18" fill="#E00090"/>
+    <circle cx="282" cy="532" r="18" fill="#A800B3"/>
+    <rect x="328" y="514" width="470" height="36" rx="18" fill="#A800B3"/>
+    <circle cx="282" cy="609" r="18" fill="#7900E0"/>
+    <rect x="328" y="591" width="320" height="36" rx="18" fill="#7900E0"/>
+    <circle cx="282" cy="686" r="18" fill="#4F00FF"/>
+    <rect x="328" y="668" width="420" height="36" rx="18" fill="#4F00FF"/>
+  </g>
+</svg>

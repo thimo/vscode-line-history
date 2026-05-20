@@ -15,6 +15,7 @@
     "vscode": "^1.80.0"
   },
   "categories": ["SCM Providers"],
+  "icon": "media/icon.png",
   "extensionDependencies": ["vscode.git"],
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
