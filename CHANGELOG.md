@@ -2,7 +2,7 @@
 
 All notable changes to the Line History extension.
 
-## Unreleased
+## [0.1.6] — 2026-09-19
 
 - View icon and title when moved out of the Explorer
   ([#1](https://github.com/thimo/vscode-line-history/issues/1)): the view
