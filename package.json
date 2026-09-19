@@ -72,7 +72,9 @@
       "explorer": [
         {
           "id": "lineHistory.view",
-          "name": "Line History"
+          "name": "Line History",
+          "contextualTitle": "Line History",
+          "icon": "$(history)"
         }
       ]
     },

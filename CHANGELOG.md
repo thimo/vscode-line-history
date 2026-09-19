@@ -2,6 +2,17 @@
 
 All notable changes to the Line History extension.
 
+## Unreleased
+
+- View icon and title when moved out of the Explorer
+  ([#1](https://github.com/thimo/vscode-line-history/issues/1)): the view
+  declared neither `icon` nor `contextualTitle`, so dragging it to its own
+  spot in the activity bar, secondary side bar or panel made it inherit the
+  Explorer's files icon and the title "EXPLORER" — indistinguishable from
+  the real Explorer. It now uses `$(history)`, the same codicon as the
+  built-in Timeline view, and is titled "Line History". No change while the
+  view stays inside the Explorer.
+
 ## [0.1.5] — 2026-05-20
 
 - Icon: crop SVG viewBox tight to the tile so the artwork fills the
